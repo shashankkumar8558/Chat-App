@@ -4,8 +4,9 @@ import messageRoute from "./routes/message.route.js"
 import userRoute from "./routes/user.route.js"
 import express from "express";
 import cookieParser from "cookie-parser";
+import { app, server } from "./socket/socket.js";
 
-const app = express();
+
 
 app.use(express.json()); //To parse the incoming requests with JSON payloads from (req.body)
 app.use(cookieParser());
@@ -19,7 +20,7 @@ app.get('/', function (req, res, next) {
 })
 
 
-app.listen(5000, () => {
+server.listen(5000, () => {
   mongooseConnection();
   console.log('Server is Runnung on the Port 5000');
 })
