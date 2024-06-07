@@ -1,12 +1,11 @@
-import { mongoose } from "mongoose";
+import mongoose from 'mongoose';
 
-const mongoURI = 'mongodb://localhost:27017/Chat-App-DB';
 
 export const mongooseConnection = async () => {
   try {
-    await mongoose.connect(mongoURI)
-    console.log('MongoDB connected')
+    await mongoose.connect('mongodb+srv://shashankkumar8558:m4BKB5eGow7baxGs@shashank.t5vlnba.mongodb.net/Chat-App-DB?retryWrites=true&w=majority&appName=Shashank');
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.log('MongoDB connection error:', error.message);
   }
-  catch (error) { console.log('MongoDB connection error:', error.message) };
-}
-
+};
