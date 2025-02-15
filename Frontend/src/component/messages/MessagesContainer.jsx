@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
-
+import { IoCall } from "react-icons/io5";
 import { TiMessages } from "react-icons/ti";
 import { useAuthContext } from "../../context/AuthContext";
 
@@ -13,17 +13,26 @@ const MessagesContainer = () => {
     // cleanup Function (Unmount)
     return () => setSelectedConversation(null);
   }, [setSelectedConversation]);
+
+  const handleCall = () => {
+    console.log("Yanha Pr webRTC lagana hai bhai");
+  };
   return (
     <div className="md:min-w-[450px] flex flex-col overflow-auto">
       {!selectedConversation ? (
         <NoChatSelected />
       ) : (
         <>
-          <div className="bg-slate-500 px-4 py-2 mb-2">
-            <span className="label-text">To:</span>{" "}
+          <div
+            className="bg-slate-500 px-4 py-2 mb-2"
+            style={{ display: "flex", justifyContent: "space-between" }}
+          >
             <span className="text-gray-900 font-bold">
               {selectedConversation.username}
             </span>
+            <div style={{display:"flex",alignItems:"center"}}>
+              <IoCall onClick={handleCall} />
+            </div>
           </div>
           <Messages />
           <MessageInput />
