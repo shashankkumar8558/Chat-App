@@ -5,10 +5,10 @@
 @tailwind utilities;
 
 body {
-  background: url("../public/aesthetic\ dark\ wallpaper.jpg");
+  background: url("/aesthetic\ dark\ wallpaper.jpg");
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: center;
+  background-position:center;
   user-select: none;
 }
 

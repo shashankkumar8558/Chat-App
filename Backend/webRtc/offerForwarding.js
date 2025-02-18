@@ -6,8 +6,7 @@ io.on("connection",(socket) => {
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
-      io.to(receiverId).emit("offer",{senderId,offer});
+      io.to(receiverSocketId).emit("offer",{senderId,offer});
     }
-    
   })
 })

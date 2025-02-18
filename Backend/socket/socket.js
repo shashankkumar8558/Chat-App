@@ -11,6 +11,7 @@ const io = new Server(server, {
     origin: ["http://localhost:3000"],
     methods: ["GET", "POST"],
   },
+  transports:["websocket"],
 });
 
 export const getReceiverSocketId = (receiverId) => {
@@ -23,7 +24,6 @@ io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
-  console.log(userId,"USERID ");
   
   if (userId != "undefined") userSocketMap[userId] = socket.id;
 
