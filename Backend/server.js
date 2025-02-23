@@ -1,3 +1,7 @@
+import "./webRtc/offerForwarding.js";
+import "./webRtc/answerForwarding.js";
+import "./webRtc/iceCandidateForwarding.js";
+import dotenv from "dotenv";
 import path from "path"
 import { mongooseConnection } from "./DB/MongoDB.js";
 import authRouter from "./routes/auth.route.js";
@@ -6,6 +10,8 @@ import userRoute from "./routes/user.route.js"
 import express from "express";
 import cookieParser from "cookie-parser";
 import { app, server } from "./socket/socket.js";
+
+dotenv.config({ path: "../.env" });
 
 const __dirname = path.resolve();
 

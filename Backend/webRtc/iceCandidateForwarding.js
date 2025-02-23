@@ -7,7 +7,7 @@ io.on("connection",(socket) => {
     const receiverSocketId = getReceiverSocketId(receiverId);
 
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("ICE-Candidate",({candidate,senderId}))
+      io.to(receiverSocketId).emit("ICE-Candidate",{candidate,senderId})
     }
     
   })

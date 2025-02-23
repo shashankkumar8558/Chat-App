@@ -2,18 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
-import GettingUsersMedia from "../webRTC/gettingUsersMedia"
+import GettingUsersMedia from "../webRTC/gettingUsersMedia";
 import { IoVideocam } from "react-icons/io5";
 import { TiMessages } from "react-icons/ti";
 import { useAuthContext } from "../../context/AuthContext";
-import { createOffer } from "../webRTC/offerGeneration";
+import { createOffer, receiveOffer } from "../webRTC/offerGeneration";
 import { useSocketContext } from "../../context/SocketContext";
 
 const MessagesContainer = () => {
   const { selectedConversation, setSelectedConversation } = useConversation();
-  const {socket} = useSocketContext();
+  const { authUser } = useAuthContext();
+  const { socket } = useSocketContext();
   const peerConnectionRef = useRef();
-  const [incomingOffer,setIncomingOffer] = useState(null);
+  const [incomingOffer, setIncomingOffer] = useState(null);
+  const [isCallActive, setIsCallActive] = useState(false);
 
   useEffect(() => {
     // cleanup Function (Unmount)
@@ -23,7 +25,7 @@ const MessagesContainer = () => {
   useEffect(() => {
     // 📌 Jab Peer 2 Ko Offer Milega, Toh Store Karo
     socket?.on("offer", async (offer) => {
-      console.log("Offer received:", offer);
+      console.log("Offer received:", offer.offer);
       setIncomingOffer(offer); // Popup Show Hoga
     });
 
@@ -45,32 +47,68 @@ const MessagesContainer = () => {
   }, [socket]);
 
   const handleCall = async () => {
-    const peerConnection = await createOffer(socket);
+    setIsCallActive(true);
+    const peerConnection = await createOffer(
+      socket,
+      selectedConversation?._id,
+      authUser?._id
+    );
     peerConnectionRef.current = peerConnection;
 
     if (peerConnection) {
+      console.log(peerConnection, "PEERCONNECTION");
       peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit('ICE-Candidate',event.candidate);
-          console.log("ICE CANDIDATE SENT : ",event.candidate);
-        }
-      }
+        console.log(
+          event.candidate,
+          "offer create krne ke baad ka candidate hai yeh "
+        );
+
+        if(peerConnection.iceGatheringState === "complete") return;
+
+        socket.emit(
+         "ICE-Candidate",{
+          candidate : event.candidate,
+          receiverId:selectedConversation?._id,
+          senderId: authUser?._id
+         }
+        );
+          console.log("ICE CANDIDATE SENT : ", event.candidate);
+        
+      };
     }
   };
 
   const acceptCall = async () => {
-    if (!incomingOffer) return 
+    if (!incomingOffer) return;
 
-    const peerConnection = await receiveOffer(incomingOffer)
+    setIsCallActive(true);
+
+    const peerConnection = await receiveOffer(
+      socket,
+      incomingOffer.offer,
+      selectedConversation?._id,
+      authUser?._id
+    );
     peerConnectionRef.current = peerConnection;
-
+  
     setIncomingOffer(null);
-
+  
     peerConnection.onicecandidate = (event) => {
-      socket.emit('ICE-Candidate',event.candidate);
-      console.log("Bhai call receive krne ke baad ka ICE CANDIDATE hai yeh : ",event.candidate);
-    }
-  }
+      if (!event.candidate) {
+        console.log("✅ ICE Candidate gathering complete, no more candidates.");
+        return;
+      }
+  
+      console.log("📡 Sending ICE Candidate:", event.candidate);
+      
+      socket.emit("ICE-Candidate", {
+        candidate: event.candidate,
+        receiverId: authUser?._id,
+        senderId: selectedConversation?._id
+      });
+    };
+  };
+  
 
   const rejectCall = () => {
     setIncomingOffer(null);
@@ -78,38 +116,57 @@ const MessagesContainer = () => {
   };
 
   return (
-    <div className="md:min-w-[450px] flex flex-col overflow-auto" style={{border: "1px solid red"}}>
+    <div
+      className="md:min-w-[450px] flex flex-col overflow-auto"
+      style={{ border: "1px solid red" }}
+    >
       {!selectedConversation ? (
         <NoChatSelected />
       ) : (
         <>
           <div
             className="bg-slate-500 px-4 py-2 mb-2"
-            style={{ display: "flex", justifyContent: "space-between",border: "1px solid red" }}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              border: "1px solid red",
+            }}
           >
             <span className="text-gray-900 font-bold">
               {selectedConversation.username}
             </span>
-            <div style={{display:"flex",alignItems:"center"}}>
-              <IoVideocam onClick={handleCall} style={{fontSize:"x-large"}}/>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <IoVideocam
+                onClick={handleCall}
+                style={{ fontSize: "x-large",cursor:"pointer" }}
+              />
             </div>
           </div>
           <div>
-      {/* 🔔 Incoming Call Pop-up */}
-      {incomingOffer && (
-        <div style={{
-          position: "fixed", top: "20px", right: "20px", padding: "10px", background: "white",
-          border: "1px solid black", borderRadius: "8px"
-        }}>
-          <p>📞 Incoming Call</p>
-          <button onClick={acceptCall} style={{ marginRight: "10px" }}>✅ Accept</button>
-          <button onClick={rejectCall}>❌ Reject</button>
-        </div>
-      )}
-    </div>
+            {/* 🔔 Incoming Call Pop-up */}
+            {incomingOffer && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: "20px",
+                  right: "20px",
+                  padding: "10px",
+                  background: "white",
+                  border: "1px solid black",
+                  borderRadius: "8px",
+                }}
+              >
+                <p>📞 Incoming Call</p>
+                <button onClick={acceptCall} style={{ marginRight: "10px" }}>
+                  ✅ Accept
+                </button>
+                <button onClick={rejectCall}>❌ Reject</button>
+              </div>
+            )}
+          </div>
           <Messages />
           <MessageInput />
-          <GettingUsersMedia />
+          {isCallActive && <GettingUsersMedia onCallEnd={() => setIsCallActive(false)} />}
         </>
       )}
     </div>
